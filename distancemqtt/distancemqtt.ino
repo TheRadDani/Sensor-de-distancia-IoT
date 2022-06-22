@@ -4,12 +4,11 @@ const int echoPin = 14;
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#define TOKEN "N2wom6NUmXJurzPRtrCL"     //  Enter your Write API key from ThingSpeak
- 
+//#define TOKEN "N2wom6NUmXJurzPRtrCL"     //  Enter your Write API key from Thingboard 
+#define TOKEN "oxSMqIiEjjjkxknnpUcv"     //  Enter your Write API key from Thingboard
 const char *ssid =  "meiexien";     // replace with your wifi ssid and wpa2 key
 const char *password =  "Guangdong1982";
-//const char* server = "api.thingspeak.com";
-char ThingsboardHost[] = "iot.eie.ucr.ac.cr";
+char ThingsboardHost[] = "demo.thingsboard.io";
 
 
 
@@ -20,7 +19,7 @@ char ThingsboardHost[] = "iot.eie.ucr.ac.cr";
 long duration;
 float distanceCm;
 float distanceInch;
-
+int sequence;
 
 //WiFiClient client;
 WiFiClient wifiClient;
@@ -28,7 +27,16 @@ PubSubClient client(wifiClient);
 int status = WL_IDLE_STATUS;
 
 
+// THE DEFAULT TIMER IS SET TO 1 SECONDS FOR TESTING PURPOSES
+unsigned long lastTime = 0;
+// Set timer to 10 minutes (600000)
+//unsigned long timerDelay = 600000;
+// Timer set to 10 seconds (10000)
+unsigned long timerDelay = 10000;
+
+
 void setup() {
+    sequence = 0;
     Serial.begin(115200); // Starts the serial communication
     pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
     pinMode(echoPin, INPUT); // Sets the echoPin as an Input
@@ -41,8 +49,8 @@ void setup() {
       Serial.print(".");
     }
     Serial.println("");
-    Serial.print("connected to");
-    Serial.println(ssid);
+    Serial.print("Connected to WiFi network with IP Address: ");
+  Serial.println(WiFi.localIP());
     client.setServer( ThingsboardHost, 1883 );
 }
 
@@ -70,12 +78,14 @@ void loop()
     
     // Convert to inches
    // distanceInch = distanceCm * CM_TO_INCH;
-
+    if ((millis() - lastTime) > timerDelay) {
     unsigned long timeBegin = micros();
-  
+    sequence++;
     // Prepare a JSON payload string
     String payload = "{";
-    payload += "\"distanceCm\":";payload += distanceCm; 
+    payload += "\"distanceCm\":";payload += distanceCm;
+    payload += ",";
+    payload += "\"sequence\":";payload += sequence; 
     payload += "}";
 
     char attributes[1000];
@@ -100,7 +110,8 @@ void loop()
     
     Serial.println("Waiting...");
     delay(1000);
-
+    lastTime = millis();
+  }
 }
 
 void reconnect() {
